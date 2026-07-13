@@ -20,7 +20,6 @@ def fit_hmm(df,n_regimes=4):
     return df
 def fit_gmm(df,n_regimes=4):
     gmm=GaussianMixture(n_components=n_regimes)
-
     df['GMM_Labels']=gmm.fit(df[regime_features]).dropna()
     
     return df
