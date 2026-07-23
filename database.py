@@ -12,7 +12,7 @@ class StockDB():
         self.forecast=self.db['Forecast']
     def save_stock_data(self,df,val):
 
-        df.reset_index(inplace=True)
+        df=df.reset_index()
         data=df.to_dict(orient='records')
 
         for rec in data:
@@ -33,15 +33,17 @@ class StockDB():
         df.drop(["_id","Ticker"],axis=1,inplace=True)
         df.set_index("Date",inplace=True)
         return df
-    def save_results(self,ticker,precision,sharpe,max_dd,regime_method):
+    def save_results(self,ticker,precision,sharpe,max_dd,regime_method,strategy_return=None,buy_hold_return=None,excess_return=None):
         self.results.insert_one(
             {
                 "Ticker":ticker,
                 "Regime_Method":regime_method,
                 "precision":precision,
                 "max_dd":max_dd,
-                "sharpe":sharpe
-
+                "sharpe":sharpe,
+                "strategy_return":strategy_return,
+                "buy_hold_return":buy_hold_return,
+                "excess_return":excess_return
             }
         )
     def load_results(self,ticker,regime_method):
@@ -95,3 +97,27 @@ class StockDB():
         for i in input:
             i['Ticker']=ticker
         self.forecast.insert_many(input)
+
+    def save_shap(self, df, ticker, regime_method):
+        df = df.reset_index()
+        data = df.to_dict(orient="records")
+        for rec in data:
+            rec["Ticker"] = ticker
+            rec["Regime_Method"] = regime_method
+        self.SHAP.insert_many(data)
+
+    def load_shap(self, ticker, regime_method):
+        out = self.SHAP.find({"Ticker": ticker, "Regime_Method": regime_method})
+        out = pd.DataFrame(list(out))
+        if out.empty:
+            return out
+        out.drop(["_id", "Ticker", "Regime_Method"], axis=1, inplace=True)
+        return out
+
+    def clear_all(self):
+        self.stocks.delete_many({})
+        self.results.delete_many({})
+        self.regimes.delete_many({})
+        self.SHAP.delete_many({})
+        self.predictions.delete_many({})
+        self.forecast.delete_many({})
